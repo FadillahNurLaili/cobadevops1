@@ -1,4 +1,4 @@
-name: Backend CI
+name: Backend CI with MySQL
 
 on:
   push:
@@ -7,6 +7,20 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: lakeSide_hotel_db
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
 
     defaults:
       run:
@@ -21,6 +35,12 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+
+      - name: Wait for MySQL to be ready
+        run: |
+          sleep 20
+          sudo apt-get install -y mysql-client
+          mysql -h 127.0.0.1 -P 3306 -u root -proot -e "SHOW DATABASES"
 
       - name: Build with Maven
         run: mvn clean install
